@@ -17,8 +17,3 @@ jobs:
       - run: npm install
 
       - run: npm start
-        env:
-          MC_HOST: ${{ secrets.MC_HOST }}
-          MC_PORT: ${{ secrets.MC_PORT }}
-          BOT_USERNAME: ${{ secrets.BOT_USERNAME }}
-          BOT_PASSWORD: ${{ secrets.BOT_PASSWORD }}
