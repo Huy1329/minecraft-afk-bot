@@ -11,7 +11,7 @@ bot.once("spawn", () => {
   console.log("BOT ĐÃ VÀO SERVER!");
 
   setTimeout(() => {
-    bot.chat("/login bot321@");
+    bot.chat("/register bot321@ bot321@");
   }, 3000);
 
   setInterval(() => {
