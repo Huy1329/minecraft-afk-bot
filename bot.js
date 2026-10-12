@@ -1,122 +1,60 @@
-const mineflayer = require("mineflayer");
 
-const HOST = "gaylosmp.mcsh.io";
-const PORT = 25565;
-const USERNAME = "Bot_By_Xenon";
-const PASSWORD = "bot321@";
+const mineflayer = require('mineflayer');
 
-let bot = null;
-let reconnecting = false;
+const host = 'gayloking1.mcsh.io';
+const port = 25565;
+const username = 'Bot_By_Xenon';
+const password = process.env.AUTHME_PASSWORD;
 
-function createBot() {
-    if (reconnecting) return;
+let bot;
+let retry = 10000;
+let timer;
 
-    reconnecting = true;
+function connect() {
+  console.log('Connecting to Noob SMP...');
 
-    console.log("=================================");
-    console.log("Đang kết nối server...");
-    console.log(`${HOST}:${PORT}`);
-    console.log(`Tên bot: ${USERNAME}`);
-    console.log("=================================");
+  bot = mineflayer.createBot({
+    host,
+    port,
+    username,
+    auth: 'offline',
+    version: '1.21.11'
+  });
 
-    bot = mineflayer.createBot({
-        host: HOST,
-        port: PORT,
-        username: USERNAME,
-        version: "1.21.11"
-    });
+  bot.on('messagestr', (message) => {
+    console.log('[CHAT]', message);
 
-    bot.once("spawn", () => {
-        reconnecting = false;
-
-        console.log("✅ BOT ĐÃ VÀO SERVER!");
-
-        // Đăng nhập sau 3 giây
-        setTimeout(() => {
-            if (!bot || !bot.entity) return;
-
-            console.log("🔑 Đang login...");
-            bot.chat(`/login ${PASSWORD}`);
-        }, 3000);
-
-        // Chống AFK
-        setInterval(() => {
-            if (!bot || !bot.entity) return;
-
-            bot.setControlState("jump", true);
-
-            setTimeout(() => {
-                if (bot) {
-                    bot.setControlState("jump", false);
-                }
-            }, 500);
-
-        }, 30000);
-    });
-
-    bot.on("messagestr", message => {
-        console.log("[SERVER]", message);
-
-        // Nếu AuthMe yêu cầu register
-        if (
-            message.toLowerCase().includes("register") ||
-            message.toLowerCase().includes("đăng ký")
-        ) {
-            setTimeout(() => {
-                if (bot && bot.entity) {
-                    bot.chat(`/register ${PASSWORD} ${PASSWORD}`);
-                }
-            }, 1500);
-        }
-
-        // Nếu AuthMe yêu cầu login
-        if (
-            message.toLowerCase().includes("login") ||
-            message.toLowerCase().includes("đăng nhập")
-        ) {
-            setTimeout(() => {
-                if (bot && bot.entity) {
-                    bot.chat(`/login ${PASSWORD}`);
-                }
-            }, 1500);
-        }
-    });
-
-    bot.on("kicked", reason => {
-        console.log("❌ BOT BỊ KICK!");
-        console.log("Lý do:", reason);
-
-        reconnect();
-    });
-
-    bot.on("error", error => {
-        console.log("⚠️ BOT ERROR:", error.message);
-
-        reconnect();
-    });
-
-    bot.on("end", reason => {
-        console.log("🔌 BOT ĐÃ MẤT KẾT NỐI!");
-        console.log("Lý do:", reason);
-
-        reconnect();
-    });
-}
-
-function reconnect() {
-    if (!reconnecting) {
-        reconnecting = true;
-
-        console.log("🔄 Sẽ reconnect sau 10 giây...");
-
-        setTimeout(() => {
-            reconnecting = false;
-
-            console.log("🔄 Đang reconnect...");
-            createBot();
-
-        }, 10000);
+    if (/\/register\b/i.test(message)) {
+      bot.chat(`/register ${password} ${password}`);
+    } else if (/\/login\b/i.test(message)) {
+      bot.chat(`/login ${password}`);
     }
+  });
+
+  bot.on('spawn', () => {
+    console.log('Bot is in the world!');
+    retry = 10000;
+  });
+
+  bot.on('kicked', (reason) => {
+    console.log('Kicked:', reason);
+  });
+
+  bot.on('error', (err) => {
+    console.log('Error:', err.message);
+  });
+
+  bot.on('end', () => {
+    console.log(`Disconnected. Retry in ${retry / 1000}s`);
+    clearTimeout(timer);
+    timer = setTimeout(connect, retry);
+    retry = Math.min(retry * 2, 60000);
+  });
 }
 
-createBot();
+if (!password) {
+  console.error('Missing AUTHME_PASSWORD secret');
+  process.exit(1);
+}
+
+connect();
