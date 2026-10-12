@@ -1,27 +1,30 @@
-name: Minecraft Bot
+
+name: Noob SMP AFK Bot
 
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
-  bot:
+  afk:
     runs-on: ubuntu-latest
     timeout-minutes: 350
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
-      - run: npm install
+      - name: Install dependencies
+        run: npm install
 
-      - run: npm start
-
-      - name: Start next job
-        if: always()
+      - name: Run bot
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh workflow run bot.yml
+          AUTHME_PASSWORD: ${{ secrets.AUTHME_PASSWORD }}
+        run: npm start
