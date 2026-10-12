@@ -7,6 +7,6 @@
     "start": "node bot.js"
   },
   "dependencies": {
-    "mineflayer": "^4.33.0"
+    "@wp2508/mineflayer": "^4.42.2"
   }
 }
