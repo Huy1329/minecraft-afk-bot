@@ -16,7 +16,7 @@ function connectBot() {
     port: PORT,
     username: USERNAME,
     auth: 'offline',
-    version: '1.21.11'
+    version: false
   });
 
   bot.once('spawn', () => {
