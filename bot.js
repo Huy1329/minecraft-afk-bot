@@ -1,56 +1,69 @@
 
-const mineflayer = require('mineflayer');
+const mineflayer = require('@wp2508/mineflayer');
 
-const HOST = 'gayloking1.mcsh.io';
-const PORT = 25565;
-const USERNAME = 'Bot_By_Xenon';
-
-let reconnectTimer = null;
-let stopping = false;
-
-function connectBot() {
-  console.log(`[BOT] Đang kết nối ${HOST}:${PORT}...`);
-
-  const bot = mineflayer.createBot({
-    host: HOST,
-    port: PORT,
-    username: USERNAME,
-    auth: 'offline',
-    version: false
-  });
-
-  bot.once('spawn', () => {
-    console.log(`[BOT] ${USERNAME} đã vào server và xuất hiện trong thế giới!`);
-  });
-
-  bot.on('messagestr', (message) => {
-    console.log('[CHAT]', message);
-  });
-
-  bot.on('kicked', (reason) => {
-    console.log('[BOT] Bị kick:', reason);
-  });
-
-  bot.on('error', (err) => {
-    console.log('[BOT] Lỗi:', err.message);
-  });
-
-  bot.on('end', () => {
-    console.log('[BOT] Mất kết nối.');
-
-    if (!stopping && !reconnectTimer) {
-      reconnectTimer = setTimeout(() => {
-        reconnectTimer = null;
-        connectBot();
-      }, 15000);
-    }
-  });
-}
-
-process.on('SIGINT', () => {
-  stopping = true;
-  if (reconnectTimer) clearTimeout(reconnectTimer);
-  process.exit(0);
+const bot = mineflayer.createBot({
+  host: 'gayloking1.mcsh.io',
+  port: 25565,
+  username: 'Bot_By_Xenon',
+  auth: 'offline',
+  version: '26.3'
 });
 
-connectBot();
+let reconnectTimer = null;
+let reconnecting = false;
+
+bot.once('spawn', () => {
+  console.log('[BOT] Đã vào server Minecraft 26.3!');
+});
+
+bot.on('messagestr', (message) => {
+  console.log('[CHAT]', message);
+});
+
+bot.on('kicked', (reason) => {
+  console.log('[BOT] Bị kick:', JSON.stringify(reason));
+});
+
+bot.on('error', (error) => {
+  console.log('[BOT] Lỗi:', error.message);
+});
+
+bot.on('end', () => {
+  console.log('[BOT] Mất kết nối.');
+
+  if (reconnecting) return;
+  reconnecting = true;
+
+  reconnectTimer = setTimeout(() => {
+    reconnecting = false;
+    console.log('[BOT] Đang thử kết nối lại...');
+    startBot();
+  }, 15000);
+});
+
+function startBot() {
+  // Tạo kết nối mới sau khi bot bị ngắt.
+  const newBot = mineflayer.createBot({
+    host: 'gayloking1.mcsh.io',
+    port: 25565,
+    username: 'Bot_By_Xenon',
+    auth: 'offline',
+    version: '26.3'
+  });
+
+  newBot.once('spawn', () => {
+    console.log('[BOT] Đã vào server Minecraft 26.3!');
+  });
+
+  newBot.on('messagestr', message => console.log('[CHAT]', message));
+  newBot.on('kicked', reason => console.log('[BOT] Bị kick:', JSON.stringify(reason)));
+  newBot.on('error', error => console.log('[BOT] Lỗi:', error.message));
+  newBot.on('end', () => {
+    if (reconnecting) return;
+    reconnecting = true;
+    reconnectTimer = setTimeout(() => {
+      reconnecting = false;
+      startBot();
+    }, 15000);
+  });
+}
