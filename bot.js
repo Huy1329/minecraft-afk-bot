@@ -1,60 +1,56 @@
 
 const mineflayer = require('mineflayer');
 
-const host = 'gayloking1.mcsh.io';
-const port = 25565;
-const username = 'Bot_By_Xenon';
-const password = process.env.AUTHME_PASSWORD;
+const HOST = 'gayloking1.mcsh.io';
+const PORT = 25565;
+const USERNAME = 'Bot_By_Xenon';
 
-let bot;
-let retry = 10000;
-let timer;
+let reconnectTimer = null;
+let stopping = false;
 
-function connect() {
-  console.log('Connecting to Noob SMP...');
+function connectBot() {
+  console.log(`[BOT] Đang kết nối ${HOST}:${PORT}...`);
 
-  bot = mineflayer.createBot({
-    host,
-    port,
-    username,
+  const bot = mineflayer.createBot({
+    host: HOST,
+    port: PORT,
+    username: USERNAME,
     auth: 'offline',
     version: '1.21.11'
   });
 
-  bot.on('messagestr', (message) => {
-    console.log('[CHAT]', message);
-
-    if (/\/register\b/i.test(message)) {
-      bot.chat(`/register ${password} ${password}`);
-    } else if (/\/login\b/i.test(message)) {
-      bot.chat(`/login ${password}`);
-    }
+  bot.once('spawn', () => {
+    console.log(`[BOT] ${USERNAME} đã vào server và xuất hiện trong thế giới!`);
   });
 
-  bot.on('spawn', () => {
-    console.log('Bot is in the world!');
-    retry = 10000;
+  bot.on('messagestr', (message) => {
+    console.log('[CHAT]', message);
   });
 
   bot.on('kicked', (reason) => {
-    console.log('Kicked:', reason);
+    console.log('[BOT] Bị kick:', reason);
   });
 
   bot.on('error', (err) => {
-    console.log('Error:', err.message);
+    console.log('[BOT] Lỗi:', err.message);
   });
 
   bot.on('end', () => {
-    console.log(`Disconnected. Retry in ${retry / 1000}s`);
-    clearTimeout(timer);
-    timer = setTimeout(connect, retry);
-    retry = Math.min(retry * 2, 60000);
+    console.log('[BOT] Mất kết nối.');
+
+    if (!stopping && !reconnectTimer) {
+      reconnectTimer = setTimeout(() => {
+        reconnectTimer = null;
+        connectBot();
+      }, 15000);
+    }
   });
 }
 
-if (!password) {
-  console.error('Missing AUTHME_PASSWORD secret');
-  process.exit(1);
-}
+process.on('SIGINT', () => {
+  stopping = true;
+  if (reconnectTimer) clearTimeout(reconnectTimer);
+  process.exit(0);
+});
 
-connect();
+connectBot();
